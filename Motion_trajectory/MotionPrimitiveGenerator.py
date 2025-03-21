@@ -449,7 +449,9 @@ class MotionPrimitiveGenerator:
         plt.axis('equal')
         plt.grid(True)
         plt.legend()
-        plt.show()
+        # plt.show()
+        plt.pause(0.001)
+        plt.close()
 
     @classmethod
     def _get_scaled_primitive(cls, primitives, current_pose, duration=1.0):

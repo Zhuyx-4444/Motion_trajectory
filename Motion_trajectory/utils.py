@@ -63,19 +63,29 @@ class ExperimentManager:
             os.path.join(self.dirs['results'], 'human_vs_reference.png'),
             dpi=300, bbox_inches='tight'
         )
+        print("\nhuman_vs_reference figure saved")
 
         fig2 = comparator.generate_comparison_figure('simulated_vs_reference')
         fig2.savefig(
             os.path.join(self.dirs['results'], 'simulated_vs_reference.png'),
             dpi=300, bbox_inches='tight'
         )
+        print("\nsimulated_vs_reference figure saved")
+
+        fig3 = comparator.generate_heatmap_figure()
+        fig3.savefig(
+            os.path.join(self.dirs['results'], 'heatmap'),
+            dpi=300, bbox_inches='tight'
+        )
+        print("\nheatmap figure saved")
+
 
     def _create_comparator(self):
         """Initialize trajectory comparator with validated paths"""
         reference_path = os.path.join(self.dirs['reference'], 'reference_trajectory.csv')
         if not os.path.exists(reference_path):
             raise FileNotFoundError(f"参考轨迹文件未找到: {reference_path}。请先生成参考轨迹。")
-        print(f"参考轨迹路径验证成功: {reference_path}") 
+        # print(f"参考轨迹路径验证成功: {reference_path}") 
     
         return EnhancedTrajectoryComparator(
             human_data_folder=os.path.join(self.dirs['human_data'], 'processed'),
@@ -95,7 +105,7 @@ class ExperimentManager:
 @click.option('--config-symmetric',
               default=os.path.join(os.path.dirname(__file__), 'generator_config_simulation.yaml'),
               help='Path to symmetric primitives config (default: ./Motion_trajectory/generator_config_simulation.yaml)')
-@click.option('--num-pairs', default=100, help='Number of trajectory pairs to generate (default: 25)')
+@click.option('--num-pairs', default=50, help='Number of trajectory pairs to generate (default: 25)')
 def main(config_single, config_symmetric, num_pairs):
     """Main execution pipeline"""
     manager = ExperimentManager({

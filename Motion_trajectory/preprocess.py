@@ -35,23 +35,23 @@ class TrajectoryProcessor:
         # Determine position based on y-axis values
         y_min = df['smoothed_position_y'].min()
         y_max = df['smoothed_position_y'].max()
-        if y_min < -1.5:
+        if y_min < -1:
             df['position'] = 3
         elif y_max > 6:
             df['position'] = 3
-        elif y_max > 3:
+        elif y_max > 4:
             df['position'] = 2
         else:
             df['position'] = 0
 
         # Define static positions
-        static_position1 = (85, 2.1)
-        static_position2 = (70, 0.0)
+        static_position1 = (65, 2.1)
+        static_position2 = (50, 0.0)
 
         # Calculate TTC for static positions
         def calculate_ttc(position_x, position_y, velocity, static_x, static_y):
             distance = np.sqrt((position_x - static_x)**2 + (position_y - static_y)**2)
-            if distance < 1.5:
+            if distance < 2:
                 return 0
             if velocity == 0:
                 return float('inf')

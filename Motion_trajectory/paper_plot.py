@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
+from scipy.interpolate import griddata
 
 plt.rcParams['font.sans-serif'] = ['DejaVu Sans']  # 使用系统已安装的Arial字体
 plt.rcParams['axes.unicode_minus'] = False  # 保留负号显示
@@ -367,6 +368,97 @@ class EnhancedTrajectoryComparator:
         sm = ScalarMappable(cmap=self.cmap, norm=plt.Normalize(0, 100))
         sm.set_array([])
         plt.colorbar(sm, ax=ax, label='Safety Score (%)', pad=0.02)
+
+
+    def generate_heatmap_figure(self) -> Figure:
+        """生成模拟轨迹安全得分的熱力图"""
+        x_coords = []
+        y_coords = []
+        scores = []
+        
+        # 收集所有模拟轨迹点及其得分
+        for traj in self.simulated_trajectories:
+            x = np.asarray(traj['ego']['x'])
+            y = np.asarray(traj['ego']['y'])
+            mask = x > 0  # 与原图一致过滤x>0
+            x_filtered = x[mask]
+            y_filtered = y[mask]
+            if len(x_filtered) == 0:
+                continue
+            x_coords.extend(x_filtered)
+            y_coords.extend(y_filtered)
+            scores.extend([traj['score']] * len(x_filtered))
+        
+        if not x_coords:
+            raise ValueError("No simulated trajectory data available for heatmap.")
+        
+        x_coords = np.array(x_coords)
+        y_coords = np.array(y_coords)
+        scores = np.array(scores)
+        
+        # 确定网格范围
+        x_min, x_max = np.min(x_coords), np.max(x_coords)
+        y_min, y_max = np.min(y_coords), np.max(y_coords)
+        
+        # 处理单点情况
+        if x_max == x_min:
+            x_max += 1.0
+        if y_max == y_min:
+            y_max += 1.0
+        
+
+        # 根据数据点数量动态选择grid_size
+
+        grid_size = 0.5  # 低密度数据用0.5米
+        x_bins =  np.arange(x_min, x_max + grid_size, grid_size)
+        y_bins = np.arange(y_min, y_max + grid_size, grid_size)
+        
+        # 计算二维直方图
+        sum_scores, xedges, yedges = np.histogram2d(
+            x_coords, y_coords, bins=(x_bins, y_bins), weights=scores
+        )
+        counts, _, _ = np.histogram2d(x_coords, y_coords, bins=(x_bins, y_bins))
+        
+        # 计算平均得分
+        with np.errstate(divide='ignore', invalid='ignore'):
+            avg_scores = sum_scores / counts
+            avg_scores[counts == 0] = np.nan
+        
+        # 创建新的白-绿色彩映射
+        heatmap_cmap = LinearSegmentedColormap.from_list('heatmap_color', ['white', 'green'])
+        
+        # 创建图像
+        fig = Figure(figsize=(15, 10))
+        ax = fig.add_subplot(111)
+
+        # 绘制热力图
+        heatmap = ax.pcolormesh(xedges, yedges, avg_scores.T,
+                               cmap=heatmap_cmap, vmin=0, vmax=100, 
+                               shading='auto', zorder=1)
+        
+        # 叠加所有模拟轨迹（灰色半透明）
+        for traj in self.simulated_trajectories:
+            x = np.asarray(traj['ego']['x'])
+            y = np.asarray(traj['ego']['y'])
+            mask = x > 0
+            x_filtered = x[mask]
+            y_filtered = y[mask]
+            
+            if len(x_filtered) > 1:  # 需要至少两个点画线
+                ax.plot(x_filtered, y_filtered,
+                        color='gray',
+                        alpha=0.3,  # 半透明
+                        linewidth=0.8,
+                        zorder=2)  # 轨迹在热力图层上方
+        
+        # 添加颜色条和标签
+        fig.colorbar(heatmap, ax=ax, label='Average Safety Score (%)')
+        ax.set(xlabel='Longitudinal Position (m)',
+              ylabel='Lateral Position (m)',
+              title='Simulated Trajectories Heatmap with Score Distribution')
+        ax.grid(True, alpha=0.3)
+        
+        return fig
 
 
 
