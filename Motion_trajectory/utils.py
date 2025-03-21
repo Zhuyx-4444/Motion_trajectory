@@ -105,7 +105,7 @@ class ExperimentManager:
 @click.option('--config-symmetric',
               default=os.path.join(os.path.dirname(__file__), 'generator_config_simulation.yaml'),
               help='Path to symmetric primitives config (default: ./Motion_trajectory/generator_config_simulation.yaml)')
-@click.option('--num-pairs', default=50, help='Number of trajectory pairs to generate (default: 25)')
+@click.option('--num-pairs', default=100, help='Number of trajectory pairs to generate (default: 25)')
 def main(config_single, config_symmetric, num_pairs):
     """Main execution pipeline"""
     manager = ExperimentManager({
